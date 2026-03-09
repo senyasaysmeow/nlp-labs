@@ -1,0 +1,11 @@
+tableau
+power bi
+powerbi
+looker
+looker studio
+metabase
+superset
+dashboard
+visualization
+reporting
+report

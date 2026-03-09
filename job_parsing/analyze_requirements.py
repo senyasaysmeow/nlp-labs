@@ -17,6 +17,20 @@ from nltk.stem import PorterStemmer, WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 # ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+WORD_LISTS_DIR = os.path.join(SCRIPT_DIR, "word_lists")
+
+
+def load_word_list(filename: str) -> list[str]:
+    """Load words/phrases from a txt file, one entry per line."""
+    path = os.path.join(WORD_LISTS_DIR, filename)
+    with open(path, "r", encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+
+# ---------------------------------------------------------------------------
 # 0. Завантаження моделей та ресурсів
 # ---------------------------------------------------------------------------
 nlp = spacy.load("en_core_web_sm")
@@ -33,101 +47,11 @@ stemmer = PorterStemmer()
 wnl = WordNetLemmatizer()
 
 # Додаткові стоп-слова специфічні для вакансій (не несуть аналітичної цінності)
-CUSTOM_STOP_WORDS = {
-    "experience",
-    "work",
-    "team",
-    "company",
-    "role",
-    "looking",
-    "join",
-    "ability",
-    "strong",
-    "working",
-    "etc",
-    "e.g",
-    "eg",
-    "year",
-    "years",
-    "also",
-    "least",
-    "including",
-    "well",
-    "new",
-    "us",
-    "one",
-    "use",
-    "using",
-    "used",
-    "day",
-    "would",
-    "need",
-    "ensure",
-    "make",
-    "like",
-    "good",
-    "plus",
-    "based",
-    "across",
-    "level",
-    "high",
-    "key",
-    "must",
-    "related",
-    "knowledge",
-    "understanding",
-    "skill",
-    "skills",
-    "candidate",
-    "ideal",
-    "offer",
-    "offers",
-    "responsibilities",
-    "requirement",
-    "requirements",
-    "required",
-    "nice",
-    "hiring",
-    "description",
-    "job",
-    "position",
-    "opportunity",
-    "opportunities",
-    "want",
-    "help",
-    "look",
-    "seek",
-    "seeking",
-    "right",
-    "create",
-    "full",
-    "best",
-    "real",
-    "world",
-    "global",
-    "part",
-    "first",
-    "within",
-    "time",
-    "support",
-    "people",
-    "professional",
-    "environment",
-    "take",
-    "develop",
-    "provide",
-    "different",
-    "major",
-    "apply",
-    "available",
-    "following",
-    "willingness",
-}
+CUSTOM_STOP_WORDS = set(load_word_list("custom_stop_words.txt"))
 
 # ---------------------------------------------------------------------------
 # 1. Завантаження даних
 # ---------------------------------------------------------------------------
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(SCRIPT_DIR, "jobs", "djinni_jobs.json")
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "charts")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -140,18 +64,7 @@ print(f"Завантажено вакансій: {len(jobs)}")
 # ---------------------------------------------------------------------------
 # 2. Фільтрація — залишаємо лише вакансії, що відносяться до Data Analyst
 # ---------------------------------------------------------------------------
-ANALYST_KEYWORDS = {
-    "data analyst",
-    "product analyst",
-    "bi analyst",
-    "bi developer",
-    "business intelligence",
-    "analytics",
-    "marketing analyst",
-    "senior data analyst",
-    "middle data analyst",
-    "junior data analyst",
-}
+ANALYST_KEYWORDS = set(load_word_list("analyst_keywords.txt"))
 
 
 def is_data_analyst_job(job: dict) -> bool:
@@ -166,8 +79,21 @@ def is_data_analyst_job(job: dict) -> bool:
     return False
 
 
+def is_english_content(job: dict, threshold: float = 0.7) -> bool:
+    """Return True if the job description is primarily in the Latin alphabet."""
+    text = f"{job.get('title', '')} {job.get('content', '')}"
+    alpha_chars = [c for c in text if c.isalpha()]
+    if not alpha_chars:
+        return False
+    latin_count = sum(1 for c in alpha_chars if ord(c) < 128)
+    return (latin_count / len(alpha_chars)) >= threshold
+
+
 filtered_jobs = [j for j in jobs if is_data_analyst_job(j)]
 print(f"Після фільтрації (Data Analyst-related): {len(filtered_jobs)}")
+
+filtered_jobs = [j for j in filtered_jobs if is_english_content(j)]
+print(f"Після фільтрації (English/Latin alphabet): {len(filtered_jobs)}")
 
 # ---------------------------------------------------------------------------
 # 3. Нормалізація тексту
@@ -295,78 +221,13 @@ trigrams = get_ngrams(tokens_lemmatized_spacy, 3)
 # ---------------------------------------------------------------------------
 # 11. Виявлення іменованих сутностей (SpaCy NER) — технології та навички
 # ---------------------------------------------------------------------------
+# Відомі технології та інструменти для пошуку
+TECH_PATTERNS = set(load_word_list("tech_patterns.txt"))
 
 
 def extract_tech_entities(texts: list[str]) -> Counter:
     """Витяг технічних термінів через NER та шаблони."""
     tech_terms = []
-    # Відомі технології та інструменти для пошуку
-    TECH_PATTERNS = {
-        "sql",
-        "python",
-        "tableau",
-        "power bi",
-        "powerbi",
-        "excel",
-        "bigquery",
-        "big query",
-        "clickhouse",
-        "postgresql",
-        "postgres",
-        "mysql",
-        "snowflake",
-        "redshift",
-        "looker",
-        "looker studio",
-        "google analytics",
-        "ga4",
-        "dax",
-        "power query",
-        "etl",
-        "elt",
-        "airflow",
-        "dbt",
-        "spark",
-        "hadoop",
-        "aws",
-        "gcp",
-        "azure",
-        "docker",
-        "git",
-        "github",
-        "pandas",
-        "numpy",
-        "matplotlib",
-        "seaborn",
-        "plotly",
-        "scipy",
-        "scikit",
-        "tensorflow",
-        "pytorch",
-        "jupyter",
-        "databricks",
-        "metabase",
-        "superset",
-        "amplitude",
-        "mixpanel",
-        "hotjar",
-        "firebase",
-        "appsflyer",
-        "gtm",
-        "google tag manager",
-        "jira",
-        "confluence",
-        "notion",
-        "ab_test",
-        "a/b test",
-        "ab test",
-        "machine learning",
-        "deep learning",
-        "statistics",
-        "statistical",
-        "r language",
-        "r programming",
-    }
 
     for text in texts:
         text_lower = text.lower()
@@ -466,70 +327,11 @@ print("КАТЕГОРИЗАЦІЯ ДОМІНАНТНИХ ВИМОГ")
 print(SEPARATOR)
 
 CATEGORIES = {
-    "Hard Skills (Технічні навички)": [
-        "sql",
-        "python",
-        "excel",
-        "statistics",
-        "statistical",
-        "machine learning",
-        "ab_test",
-        "etl",
-        "dax",
-        "power query",
-        "modeling",
-        "programming",
-        "scripting",
-        "automation",
-    ],
-    "BI & Візуалізація": [
-        "tableau",
-        "power bi",
-        "powerbi",
-        "looker",
-        "looker studio",
-        "metabase",
-        "superset",
-        "dashboard",
-        "visualization",
-        "reporting",
-        "report",
-    ],
-    "Бази даних та Хмарні платформи": [
-        "bigquery",
-        "big query",
-        "clickhouse",
-        "postgresql",
-        "postgres",
-        "mysql",
-        "snowflake",
-        "redshift",
-        "databricks",
-        "aws",
-        "gcp",
-        "azure",
-    ],
-    "Аналітичні платформи": [
-        "google analytics",
-        "ga4",
-        "amplitude",
-        "mixpanel",
-        "hotjar",
-        "firebase",
-        "appsflyer",
-        "gtm",
-    ],
-    "Soft Skills": [
-        "communication",
-        "english",
-        "teamwork",
-        "presentation",
-        "problem solving",
-        "analytical thinking",
-        "attention detail",
-        "proactive",
-        "independent",
-    ],
+    "Hard Skills (Технічні навички)": load_word_list("cat_hard_skills.txt"),
+    "BI & Візуалізація": load_word_list("cat_bi_viz.txt"),
+    "Бази даних та Хмарні платформи": load_word_list("cat_databases_cloud.txt"),
+    "Аналітичні платформи": load_word_list("cat_analytics_platforms.txt"),
+    "Soft Skills": load_word_list("cat_soft_skills.txt"),
 }
 
 
@@ -562,24 +364,7 @@ print(f"\n{SEPARATOR}")
 print("ПОРІВНЯННЯ: ЛЕМАТИЗАЦІЯ (SpaCy) vs СТЕМІНГ (NLTK)")
 print(SEPARATOR)
 
-sample_words = [
-    "analytics",
-    "analyzing",
-    "analysis",
-    "dashboards",
-    "building",
-    "reporting",
-    "visualization",
-    "optimization",
-    "statistical",
-    "segmentation",
-    "recommendations",
-    "communication",
-    "processing",
-    "proficiency",
-    "monitoring",
-    "engineering",
-]
+sample_words = load_word_list("sample_words.txt")
 
 print(f"  {'Оригінал':<20} {'SpaCy Лема':<20} {'NLTK Лема':<20} {'Porter Стем':<20}")
 print(f"  {'-' * 20} {'-' * 20} {'-' * 20} {'-' * 20}")
@@ -618,32 +403,7 @@ print("""
 """)
 
 # Фільтруємо лише значущі аналітичні терміни
-MEANINGFUL_TERMS = {
-    "datum",
-    "data",
-    "analysis",
-    "report",
-    "dashboard",
-    "metric",
-    "insight",
-    "business",
-    "product",
-    "query",
-    "visualization",
-    "test",
-    "performance",
-    "funnel",
-    "retention",
-    "segment",
-    "monitor",
-    "model",
-    "automation",
-    "pipeline",
-    "decision",
-    "stakeholder",
-    "conversion",
-    "kpi",
-}
+MEANINGFUL_TERMS = set(load_word_list("meaningful_terms.txt"))
 
 meaningful_freq = {w: c for w, c in freq_spacy.items() if w in MEANINGFUL_TERMS}
 meaningful_sorted = sorted(meaningful_freq.items(), key=lambda x: -x[1])

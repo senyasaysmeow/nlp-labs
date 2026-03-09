@@ -1,0 +1,14 @@
+sql
+python
+excel
+statistics
+statistical
+machine learning
+ab_test
+etl
+dax
+power query
+modeling
+programming
+scripting
+automation

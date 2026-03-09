@@ -1,0 +1,64 @@
+sql
+python
+tableau
+power bi
+powerbi
+excel
+bigquery
+big query
+clickhouse
+postgresql
+postgres
+mysql
+snowflake
+redshift
+looker
+looker studio
+google analytics
+ga4
+dax
+power query
+etl
+elt
+airflow
+dbt
+spark
+hadoop
+aws
+gcp
+azure
+docker
+git
+github
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+scipy
+scikit
+tensorflow
+pytorch
+jupyter
+databricks
+metabase
+superset
+amplitude
+mixpanel
+hotjar
+firebase
+appsflyer
+gtm
+google tag manager
+jira
+confluence
+notion
+ab_test
+a/b test
+ab test
+machine learning
+deep learning
+statistics
+statistical
+r language
+r programming

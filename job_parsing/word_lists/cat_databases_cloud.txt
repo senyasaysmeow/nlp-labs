@@ -1,0 +1,12 @@
+bigquery
+big query
+clickhouse
+postgresql
+postgres
+mysql
+snowflake
+redshift
+databricks
+aws
+gcp
+azure
