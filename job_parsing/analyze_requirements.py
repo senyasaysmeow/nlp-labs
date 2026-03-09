@@ -1,6 +1,14 @@
 import json
+import os
 import re
 from collections import Counter
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import numpy as np
 
 import spacy
 import nltk
@@ -119,9 +127,10 @@ CUSTOM_STOP_WORDS = {
 # ---------------------------------------------------------------------------
 # 1. Завантаження даних
 # ---------------------------------------------------------------------------
-import os
-
-DATA_PATH = os.path.join(os.path.dirname(__file__), "jobs", "djinni_jobs.json")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(SCRIPT_DIR, "jobs", "djinni_jobs.json")
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "charts")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 with open(DATA_PATH, "r", encoding="utf-8") as f:
     jobs = json.load(f)
@@ -643,3 +652,172 @@ for i, (word, cnt) in enumerate(meaningful_sorted[:15], 1):
     print(f"   {i:>2}. {word:<25} ({cnt} згадувань)")
 
 print()
+
+# ---------------------------------------------------------------------------
+# 16. Візуалізація результатів (matplotlib)
+# ---------------------------------------------------------------------------
+print(f"\n{SEPARATOR}")
+print("ЗБЕРЕЖЕННЯ ГРАФІКІВ")
+print(SEPARATOR)
+
+try:
+    plt.style.use("ggplot")
+except OSError:
+    pass  # fall back to default style
+
+
+def save_fig(fig, name: str) -> None:
+    path = os.path.join(OUTPUT_DIR, name)
+    fig.savefig(path, bbox_inches="tight", dpi=150)
+    plt.close(fig)
+    print(f"  Збережено: {path}")
+
+
+# --- 16.1 Топ-20 технологій та інструментів ---
+TOP_N = 20
+tech_labels_v, tech_values_v = zip(*tech_counter.most_common(TOP_N))
+fig, ax = plt.subplots(figsize=(10, 7))
+colors_tech = matplotlib.colormaps["Blues_r"](np.linspace(0.3, 0.9, TOP_N))
+bars = ax.barh(tech_labels_v[::-1], tech_values_v[::-1], color=colors_tech)
+ax.set_xlabel("Кількість згадувань", fontsize=12)
+ax.set_title(
+    f"Топ-{TOP_N} технологій та інструментів\n(за {len(filtered_jobs)} вакансіями Data Analyst)",
+    fontsize=13,
+    fontweight="bold",
+)
+ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+for bar, val in zip(bars, tech_values_v[::-1]):
+    ax.text(
+        bar.get_width() + max(tech_values_v) * 0.01,
+        bar.get_y() + bar.get_height() / 2,
+        str(val),
+        va="center",
+        fontsize=9,
+    )
+ax.margins(x=0.12)
+save_fig(fig, "01_top_technologies.png")
+
+# --- 16.2 Топ-25 слів (SpaCy лематизація) ---
+TOP_N = 25
+spacy_words_v, spacy_counts_v = zip(*freq_spacy.most_common(TOP_N))
+fig, ax = plt.subplots(figsize=(10, 9))
+colors_spacy = matplotlib.colormaps["Greens_r"](np.linspace(0.3, 0.9, TOP_N))
+bars = ax.barh(spacy_words_v[::-1], spacy_counts_v[::-1], color=colors_spacy)
+ax.set_xlabel("Частота", fontsize=12)
+ax.set_title(
+    f"Топ-{TOP_N} слів після лематизації SpaCy", fontsize=13, fontweight="bold"
+)
+ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+for bar, val in zip(bars, spacy_counts_v[::-1]):
+    ax.text(
+        bar.get_width() + max(spacy_counts_v) * 0.01,
+        bar.get_y() + bar.get_height() / 2,
+        str(val),
+        va="center",
+        fontsize=9,
+    )
+ax.margins(x=0.12)
+save_fig(fig, "02_top_lemmas_spacy.png")
+
+# --- 16.3 Топ-15 біграм ---
+TOP_N = 15
+bigram_labels_v, bigram_values_v = zip(*freq_bigrams.most_common(TOP_N))
+fig, ax = plt.subplots(figsize=(12, 6))
+colors_bigrams = matplotlib.colormaps["Oranges_r"](np.linspace(0.3, 0.9, TOP_N))
+bars = ax.barh(bigram_labels_v[::-1], bigram_values_v[::-1], color=colors_bigrams)
+ax.set_xlabel("Частота", fontsize=12)
+ax.set_title(f"Топ-{TOP_N} біграм (пари слів)", fontsize=13, fontweight="bold")
+ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+for bar, val in zip(bars, bigram_values_v[::-1]):
+    ax.text(
+        bar.get_width() + max(bigram_values_v) * 0.01,
+        bar.get_y() + bar.get_height() / 2,
+        str(val),
+        va="center",
+        fontsize=9,
+    )
+ax.margins(x=0.12)
+save_fig(fig, "03_top_bigrams.png")
+
+# --- 16.4 Підсумок категорій ---
+cat_palette = ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"]
+category_counts_all: dict[str, dict[str, int]] = {
+    cat: count_category(texts_for_cat, kws) for cat, kws in CATEGORIES.items()
+}
+category_totals_v = {cat: sum(c.values()) for cat, c in category_counts_all.items()}
+cat_labels_v = list(category_totals_v.keys())
+cat_values_v = list(category_totals_v.values())
+
+fig, ax = plt.subplots(figsize=(10, 4))
+bars = ax.barh(cat_labels_v, cat_values_v, color=cat_palette)
+ax.set_xlabel("Загальна кількість згадувань", fontsize=12)
+ax.set_title(
+    "Загальна кількість згадувань за категоріями", fontsize=13, fontweight="bold"
+)
+for bar, val in zip(bars, cat_values_v):
+    ax.text(
+        bar.get_width() + max(cat_values_v) * 0.01,
+        bar.get_y() + bar.get_height() / 2,
+        str(val),
+        va="center",
+        fontsize=10,
+    )
+ax.margins(x=0.12)
+save_fig(fig, "04_category_totals.png")
+
+# --- 16.5 Деталізація категорій (subplots) ---
+n_cats = len(CATEGORIES)
+fig, axes = plt.subplots(n_cats, 1, figsize=(12, 3.5 * n_cats))
+fig.suptitle("Деталізація вимог за категоріями", fontsize=14, fontweight="bold")
+for ax, category, color in zip(axes, CATEGORIES.keys(), cat_palette):
+    counts = category_counts_all[category]
+    ax.set_title(category, fontsize=11, fontweight="bold")
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    if counts:
+        ks, vs = zip(*counts.items())
+        ax.barh(ks, vs, color=color, alpha=0.85)
+        for i, v in enumerate(vs):
+            ax.text(v + max(vs) * 0.01, i, str(v), va="center", fontsize=8)
+        ax.margins(x=0.12)
+fig.tight_layout()
+save_fig(fig, "05_category_detail.png")
+
+# --- 16.6 NLP-пайплайн: кількість токенів на кожному етапі ---
+pipeline_stages = [
+    "Токенізація\n(NLTK)",
+    "Після\nстоп-слів",
+    "Лематизація\nSpaCy",
+    "Стемінг\nNLTK",
+    "Лематизація\nNLTK",
+]
+pipeline_values = [
+    len(tokens_nltk),
+    len(tokens_clean),
+    len(tokens_lemmatized_spacy),
+    len(tokens_stemmed),
+    len(tokens_lemmatized_nltk),
+]
+pipeline_colors = ["#546E7A", "#607D8B", "#78909C", "#90A4AE", "#B0BEC5"]
+fig, ax = plt.subplots(figsize=(10, 5))
+bars = ax.bar(pipeline_stages, pipeline_values, color=pipeline_colors, width=0.6)
+ax.set_ylabel("Кількість токенів", fontsize=12)
+ax.set_title(
+    "NLP-пайплайн: кількість токенів на кожному етапі",
+    fontsize=13,
+    fontweight="bold",
+)
+ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+for bar, val in zip(bars, pipeline_values):
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,
+        bar.get_height() + max(pipeline_values) * 0.01,
+        f"{val:,}",
+        ha="center",
+        va="bottom",
+        fontsize=10,
+        fontweight="bold",
+    )
+ax.margins(y=0.12)
+save_fig(fig, "06_nlp_pipeline.png")
+
+print(f"\nУсі графіки збережено у: {OUTPUT_DIR}")
