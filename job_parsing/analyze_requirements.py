@@ -79,21 +79,8 @@ def is_data_analyst_job(job: dict) -> bool:
     return False
 
 
-def is_english_content(job: dict, threshold: float = 0.7) -> bool:
-    """Return True if the job description is primarily in the Latin alphabet."""
-    text = f"{job.get('title', '')} {job.get('content', '')}"
-    alpha_chars = [c for c in text if c.isalpha()]
-    if not alpha_chars:
-        return False
-    latin_count = sum(1 for c in alpha_chars if ord(c) < 128)
-    return (latin_count / len(alpha_chars)) >= threshold
-
-
 filtered_jobs = [j for j in jobs if is_data_analyst_job(j)]
 print(f"Після фільтрації (Data Analyst-related): {len(filtered_jobs)}")
-
-filtered_jobs = [j for j in filtered_jobs if is_english_content(j)]
-print(f"Після фільтрації (English/Latin alphabet): {len(filtered_jobs)}")
 
 # ---------------------------------------------------------------------------
 # 3. Нормалізація тексту
@@ -181,32 +168,7 @@ tokens_lemmatized_spacy = lemmatize_spacy(tokens_clean)
 tokens_lemmatized_spacy = remove_stop_words(tokens_lemmatized_spacy)
 
 # ---------------------------------------------------------------------------
-# 8. Стемінг (NLTK Porter Stemmer)
-# ---------------------------------------------------------------------------
-
-
-def stem_tokens(tokens: list[str]) -> list[str]:
-    """Стемінг з використанням NLTK PorterStemmer."""
-    return [stemmer.stem(t) for t in tokens]
-
-
-tokens_stemmed = stem_tokens(tokens_clean)
-
-# ---------------------------------------------------------------------------
-# 9. Лематизація (NLTK WordNet) — для порівняння
-# ---------------------------------------------------------------------------
-
-
-def lemmatize_nltk(tokens: list[str]) -> list[str]:
-    """Лематизація з використанням NLTK WordNetLemmatizer."""
-    return [wnl.lemmatize(t) for t in tokens]
-
-
-tokens_lemmatized_nltk = lemmatize_nltk(tokens_clean)
-tokens_lemmatized_nltk = remove_stop_words(tokens_lemmatized_nltk)
-
-# ---------------------------------------------------------------------------
-# 10. Аналіз n-gram (біграми для виявлення технологій та навичок)
+# 8. Аналіз n-gram (біграми для виявлення технологій та навичок)
 # ---------------------------------------------------------------------------
 
 
@@ -219,7 +181,7 @@ bigrams = get_ngrams(tokens_lemmatized_spacy, 2)
 trigrams = get_ngrams(tokens_lemmatized_spacy, 3)
 
 # ---------------------------------------------------------------------------
-# 11. Виявлення іменованих сутностей (SpaCy NER) — технології та навички
+# 9. Виявлення іменованих сутностей (SpaCy NER) — технології та навички
 # ---------------------------------------------------------------------------
 # Відомі технології та інструменти для пошуку
 TECH_PATTERNS = set(load_word_list("tech_patterns.txt"))
@@ -241,14 +203,9 @@ def extract_tech_entities(texts: list[str]) -> Counter:
 tech_counter = extract_tech_entities(all_texts_raw)
 
 # ---------------------------------------------------------------------------
-# 12. Виведення результатів
+# 10. Виведення результатів
 # ---------------------------------------------------------------------------
 SEPARATOR = "=" * 70
-
-print(f"\n{SEPARATOR}")
-print("АНАЛІЗ ДОМІНАНТНИХ ВИМОГ ДО ПОСАДИ АНАЛІТИКА ДАНИХ")
-print(f"(на основі {len(filtered_jobs)} вакансій з Djinni)")
-print(SEPARATOR)
 
 # --- Етапи обробки ---
 print("\n--- ЕТАПИ NLP-ОБРОБКИ ---")
@@ -261,45 +218,9 @@ print(f"  4. Стоп-слова:         {len(tokens_nltk)} -> {len(tokens_clea
 print(
     f"  5. Лематизація SpaCy:  {len(tokens_clean)} -> {len(tokens_lemmatized_spacy)} лем"
 )
-print(f"  6. Стемінг NLTK:       {len(tokens_clean)} -> {len(tokens_stemmed)} стемів")
-print(
-    f"  7. Лематизація NLTK:   {len(tokens_clean)} -> {len(tokens_lemmatized_nltk)} лем"
-)
 
 # --- Топ слів після лематизації SpaCy ---
-print(f"\n{SEPARATOR}")
-print("ТОП-30 СЛІВ (Лематизація SpaCy)")
-print(SEPARATOR)
 freq_spacy = Counter(tokens_lemmatized_spacy)
-for rank, (word, count) in enumerate(freq_spacy.most_common(30), 1):
-    bar = "#" * (count // 5)
-    print(f"  {rank:>2}. {word:<25} {count:>4}  {bar}")
-
-# --- Топ слів після стемінгу NLTK ---
-print(f"\n{SEPARATOR}")
-print("ТОП-30 СЛІВ (Стемінг NLTK)")
-print(SEPARATOR)
-freq_stemmed = Counter(tokens_stemmed)
-for rank, (word, count) in enumerate(freq_stemmed.most_common(30), 1):
-    bar = "#" * (count // 5)
-    print(f"  {rank:>2}. {word:<25} {count:>4}  {bar}")
-
-# --- Топ слів після лематизації NLTK ---
-print(f"\n{SEPARATOR}")
-print("ТОП-30 СЛІВ (Лематизація NLTK WordNet)")
-print(SEPARATOR)
-freq_nltk_lem = Counter(tokens_lemmatized_nltk)
-for rank, (word, count) in enumerate(freq_nltk_lem.most_common(30), 1):
-    bar = "#" * (count // 5)
-    print(f"  {rank:>2}. {word:<25} {count:>4}  {bar}")
-
-# --- Технології та інструменти ---
-print(f"\n{SEPARATOR}")
-print("ТОП ТЕХНОЛОГІЙ ТА ІНСТРУМЕНТІВ (частота згадувань)")
-print(SEPARATOR)
-for rank, (tech, count) in enumerate(tech_counter.most_common(25), 1):
-    bar = "#" * (count // 2)
-    print(f"  {rank:>2}. {tech:<25} {count:>4}  {bar}")
 
 # --- Біграми ---
 print(f"\n{SEPARATOR}")
@@ -320,12 +241,8 @@ for rank, (tg, count) in enumerate(freq_trigrams.most_common(20), 1):
     print(f"  {rank:>2}. {tg:<45} {count:>4}  {bar}")
 
 # ---------------------------------------------------------------------------
-# 13. Категоризація вимог
+# 11. Категоризація вимог
 # ---------------------------------------------------------------------------
-print(f"\n{SEPARATOR}")
-print("КАТЕГОРИЗАЦІЯ ДОМІНАНТНИХ ВИМОГ")
-print(SEPARATOR)
-
 CATEGORIES = {
     "Hard Skills (Технічні навички)": load_word_list("cat_hard_skills.txt"),
     "BI & Візуалізація": load_word_list("cat_bi_viz.txt"),
@@ -348,17 +265,8 @@ def count_category(texts: list[str], keywords: list[str]) -> dict[str, int]:
 
 texts_for_cat = [j.get("content", "") for j in filtered_jobs]
 
-for category, keywords in CATEGORIES.items():
-    counts = count_category(texts_for_cat, keywords)
-    if counts:
-        total = sum(counts.values())
-        print(f"\n  {category} (загалом згадувань: {total}):")
-        for kw, cnt in counts.items():
-            bar = "#" * (cnt // 2)
-            print(f"    {kw:<25} {cnt:>4}  {bar}")
-
 # ---------------------------------------------------------------------------
-# 14. Порівняння лематизації та стемінгу
+# 12. Порівняння лематизації та стемінгу
 # ---------------------------------------------------------------------------
 print(f"\n{SEPARATOR}")
 print("ПОРІВНЯННЯ: ЛЕМАТИЗАЦІЯ (SpaCy) vs СТЕМІНГ (NLTK)")
@@ -376,7 +284,7 @@ for word in sample_words:
     print(f"  {word:<20} {spacy_lem:<20} {nltk_lem:<20} {stem:<20}")
 
 # ---------------------------------------------------------------------------
-# 15. Підсумок
+# 13. Підсумок
 # ---------------------------------------------------------------------------
 print(f"\n{SEPARATOR}")
 print("ВИСНОВКИ: ДОМІНАНТНІ ВИМОГИ ДО DATA ANALYST")
@@ -414,7 +322,7 @@ for i, (word, cnt) in enumerate(meaningful_sorted[:15], 1):
 print()
 
 # ---------------------------------------------------------------------------
-# 16. Візуалізація результатів (matplotlib)
+# 14. Візуалізація результатів (matplotlib)
 # ---------------------------------------------------------------------------
 print(f"\n{SEPARATOR}")
 print("ЗБЕРЕЖЕННЯ ГРАФІКІВ")
@@ -433,7 +341,7 @@ def save_fig(fig, name: str) -> None:
     print(f"  Збережено: {path}")
 
 
-# --- 16.1 Топ-20 технологій та інструментів ---
+# --- 14.1 Топ-20 технологій та інструментів ---
 TOP_N = 20
 tech_labels_v, tech_values_v = zip(*tech_counter.most_common(TOP_N))
 fig, ax = plt.subplots(figsize=(10, 7))
@@ -457,7 +365,7 @@ for bar, val in zip(bars, tech_values_v[::-1]):
 ax.margins(x=0.12)
 save_fig(fig, "01_top_technologies.png")
 
-# --- 16.2 Топ-25 слів (SpaCy лематизація) ---
+# --- 14.2 Топ-25 слів (SpaCy лематизація) ---
 TOP_N = 25
 spacy_words_v, spacy_counts_v = zip(*freq_spacy.most_common(TOP_N))
 fig, ax = plt.subplots(figsize=(10, 9))
@@ -479,7 +387,7 @@ for bar, val in zip(bars, spacy_counts_v[::-1]):
 ax.margins(x=0.12)
 save_fig(fig, "02_top_lemmas_spacy.png")
 
-# --- 16.3 Топ-15 біграм ---
+# --- 14.3 Топ-15 біграм ---
 TOP_N = 15
 bigram_labels_v, bigram_values_v = zip(*freq_bigrams.most_common(TOP_N))
 fig, ax = plt.subplots(figsize=(12, 6))
@@ -499,7 +407,7 @@ for bar, val in zip(bars, bigram_values_v[::-1]):
 ax.margins(x=0.12)
 save_fig(fig, "03_top_bigrams.png")
 
-# --- 16.4 Підсумок категорій ---
+# --- 14.4 Підсумок категорій ---
 cat_palette = ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"]
 category_counts_all: dict[str, dict[str, int]] = {
     cat: count_category(texts_for_cat, kws) for cat, kws in CATEGORIES.items()
@@ -525,7 +433,7 @@ for bar, val in zip(bars, cat_values_v):
 ax.margins(x=0.12)
 save_fig(fig, "04_category_totals.png")
 
-# --- 16.5 Деталізація категорій (subplots) ---
+# --- 14.5 Деталізація категорій (subplots) ---
 n_cats = len(CATEGORIES)
 fig, axes = plt.subplots(n_cats, 1, figsize=(12, 3.5 * n_cats))
 fig.suptitle("Деталізація вимог за категоріями", fontsize=14, fontweight="bold")
@@ -541,43 +449,5 @@ for ax, category, color in zip(axes, CATEGORIES.keys(), cat_palette):
         ax.margins(x=0.12)
 fig.tight_layout()
 save_fig(fig, "05_category_detail.png")
-
-# --- 16.6 NLP-пайплайн: кількість токенів на кожному етапі ---
-pipeline_stages = [
-    "Токенізація\n(NLTK)",
-    "Після\nстоп-слів",
-    "Лематизація\nSpaCy",
-    "Стемінг\nNLTK",
-    "Лематизація\nNLTK",
-]
-pipeline_values = [
-    len(tokens_nltk),
-    len(tokens_clean),
-    len(tokens_lemmatized_spacy),
-    len(tokens_stemmed),
-    len(tokens_lemmatized_nltk),
-]
-pipeline_colors = ["#546E7A", "#607D8B", "#78909C", "#90A4AE", "#B0BEC5"]
-fig, ax = plt.subplots(figsize=(10, 5))
-bars = ax.bar(pipeline_stages, pipeline_values, color=pipeline_colors, width=0.6)
-ax.set_ylabel("Кількість токенів", fontsize=12)
-ax.set_title(
-    "NLP-пайплайн: кількість токенів на кожному етапі",
-    fontsize=13,
-    fontweight="bold",
-)
-ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-for bar, val in zip(bars, pipeline_values):
-    ax.text(
-        bar.get_x() + bar.get_width() / 2,
-        bar.get_height() + max(pipeline_values) * 0.01,
-        f"{val:,}",
-        ha="center",
-        va="bottom",
-        fontsize=10,
-        fontweight="bold",
-    )
-ax.margins(y=0.12)
-save_fig(fig, "06_nlp_pipeline.png")
 
 print(f"\nУсі графіки збережено у: {OUTPUT_DIR}")

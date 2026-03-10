@@ -4,9 +4,9 @@ from bs4 import BeautifulSoup
 import time
 import os
 
-
-dir_path = "jobs/"
-os.makedirs(dir_path, exist_ok=True)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "jobs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def fetch_job_text(url, headers):
@@ -90,7 +90,7 @@ def parse_djinni_latest(url: str):
 
 if __name__ == "__main__":
     jobs = []
-    for i in range(1, 11):
+    for i in range(1, 19):
         url = f"https://djinni.co/jobs/keyword-data_analyst/?page={i}"
         latest_jobs = parse_djinni_latest(url)
         jobs.extend(latest_jobs)
@@ -105,6 +105,6 @@ if __name__ == "__main__":
         print(f"{preview}{'...' if len(item['content']) > 300 else ''}")
         print("\n")
 
-    with open(f"{dir_path}djinni_jobs.json", "w", encoding="utf-8") as f:
+    with open(f"{OUTPUT_DIR}/djinni_jobs.json", "w", encoding="utf-8") as f:
         json.dump(jobs, f, ensure_ascii=False, indent=4)
-    print(f"Successfully saved to {dir_path}djinni_jobs.json")
+    print(f"Successfully saved to {OUTPUT_DIR}/djinni_jobs.json")
