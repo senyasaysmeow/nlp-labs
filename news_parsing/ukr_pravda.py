@@ -1,25 +1,27 @@
 from datetime import datetime, timedelta
 import json
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 import time
 import os
+import random
 
 dir_path = "article/"
 os.makedirs(dir_path, exist_ok=True)
 
 
-def fetch_article_text(url, headers):
+def fetch_article_text(url, scraper):
     try:
         print(f"Parsing article {url}")
-        response = requests.get(url, headers=headers)
+        time.sleep(random.uniform(1, 3))  # Random delay to avoid detection
+        response = scraper.get(url)
         for attempt in range(5):
             if response.status_code != 429:
                 break
-            wait = 2**attempt
-            print(f"Rate limited. Waiting {wait} seconds...")
+            wait = 2**attempt + random.uniform(0, 1)
+            print(f"Rate limited. Waiting {wait:.1f} seconds...")
             time.sleep(wait)
-            response = requests.get(url, headers=headers)
+            response = scraper.get(url)
         if response.status_code != 200:
             return f"[Failed to fetch article. Status: {response.status_code}]"
 
@@ -27,9 +29,7 @@ def fetch_article_text(url, headers):
 
         content_div = soup.find(
             "div",
-            class_=lambda x: bool(
-                x and isinstance(x, str) and c in x for c in ["post_text", "news_text"]
-            ),
+            class_=lambda x: x and any(c in str(x) for c in ["post_text", "news_text"]),
         )
 
         if content_div:
@@ -41,24 +41,18 @@ def fetch_article_text(url, headers):
         return f"[Error fetching article: {str(e)}]"
 
 
-def parse_ukr_pravda_by_date(url: str, date: datetime):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9,uk;q=0.8",
-        "Accept-Encoding": "gzip, deflate",
-        "Connection": "keep-alive",
-    }
+def parse_ukr_pravda_by_date(url: str, date: datetime, scraper):
     full_url = f"{url}/date_{date.strftime('%d%m%Y')}"
     print(f"Fetching page {full_url}")
-    response = requests.get(full_url, headers=headers)
+    time.sleep(random.uniform(1, 2))  # Random delay
+    response = scraper.get(full_url)
     for attempt in range(5):
         if response.status_code != 429:
             break
-        wait = 2**attempt
-        print(f"Rate limited. Waiting {wait} seconds...")
+        wait = 2**attempt + random.uniform(0, 1)
+        print(f"Rate limited. Waiting {wait:.1f} seconds...")
         time.sleep(wait)
-        response = requests.get(full_url, headers=headers)
+        response = scraper.get(full_url)
     if response.status_code != 200:
         print(f"Failed to fetch page. Status code: {response.status_code}")
         return []
@@ -96,7 +90,7 @@ def parse_ukr_pravda_by_date(url: str, date: datetime):
         time_text = time_tag.text.strip()
         pub_time = f"{date.strftime('%Y-%m-%d')}T{time_text}+02:00"
 
-        content = fetch_article_text(link, headers)
+        content = fetch_article_text(link, scraper)
         if content == "[Content structure not found]":
             continue
 
@@ -112,9 +106,11 @@ def parse_ukr_pravda_by_date(url: str, date: datetime):
             "sport": ["https://champion.com.ua/"],
         }
 
+        link_category = "other"  # Default category
         for category, base_urls in category_websites.items():
-            if link.startswith(tuple(base_urls)):
+            if link and link.startswith(tuple(base_urls)):
                 link_category = category
+                break
 
         news_items.append(
             {
@@ -133,9 +129,14 @@ if __name__ == "__main__":
     date = datetime.now()
     url = "https://pravda.com.ua/news"
 
+    # Create cloudscraper session to bypass Cloudflare
+    scraper = cloudscraper.create_scraper(
+        browser={"browser": "chrome", "platform": "windows", "desktop": True}
+    )
+
     news = []
-    for i in range(9):
-        news.extend(parse_ukr_pravda_by_date(url, date))
+    for i in range(2):
+        news.extend(parse_ukr_pravda_by_date(url, date, scraper))
         date -= timedelta(days=1)
     print(f"Total articles found: {len(news)}\n")
     print("Examples:\n")
