@@ -26,7 +26,10 @@ def fetch_article_text(url, headers):
         soup = BeautifulSoup(response.text, "html.parser")
 
         content_div = soup.find(
-            "div", class_=lambda x: bool(x and isinstance(x, str) and "news_text" in x)
+            "div",
+            class_=lambda x: bool(
+                x and isinstance(x, str) and c in x for c in ["post_text", "news_text"]
+            ),
         )
 
         if content_div:
@@ -97,8 +100,30 @@ def parse_ukr_pravda_by_date(url: str, date: datetime):
         if content == "[Content structure not found]":
             continue
 
+        category_websites = {
+            "politics": [
+                "https://www.pravda.com.ua/",
+                "https://www.eurointegration.com.ua/",
+            ],
+            "economics": ["https://epravda.com.ua/"],
+            "life": ["https://life.pravda.com.ua/"],
+            "technologies": ["https://mezha.ua/"],
+            "defence": ["https://oboronka.mezha.ua/"],
+            "sport": ["https://champion.com.ua/"],
+        }
+
+        for category, base_urls in category_websites.items():
+            if link.startswith(tuple(base_urls)):
+                link_category = category
+
         news_items.append(
-            {"title": title, "link": link, "time": pub_time, "content": content}
+            {
+                "title": title,
+                "link": link,
+                "time": pub_time,
+                "content": content,
+                "category": link_category,
+            }
         )
 
     return news_items
