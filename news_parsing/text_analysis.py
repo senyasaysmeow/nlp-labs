@@ -499,7 +499,7 @@ def main():
 
     # Завантаження даних
     print("\nЗавантаження новин...")
-    documents = load_news("article/ukr_pravda_news.json")
+    documents = load_news("articles/ukr_pravda_news.json")
     print(f"Завантажено {len(documents)} документів")
 
     # Статистика корпусу
