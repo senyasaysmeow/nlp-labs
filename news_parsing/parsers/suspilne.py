@@ -3,8 +3,11 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import os
+from pathlib import Path
 
-dir_path = "article/"
+
+script_dir = Path(__file__).parent.parent
+dir_path = script_dir / "articles/"
 os.makedirs(dir_path, exist_ok=True)
 
 

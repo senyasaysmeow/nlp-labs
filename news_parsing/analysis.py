@@ -7,13 +7,19 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from wordcloud import WordCloud
 import os
+from pathlib import Path
 
-dir_path = "analysis/"
+script_dir = Path(__file__).parent
+dir_path = script_dir / "analysis/"
 os.makedirs(dir_path, exist_ok=True)
 
 
-stopwords_ua = pd.read_csv("stopwords/stopwords_ua.txt", header=None, names=["w"])
-stopwords_eng = pd.read_csv("stopwords/stopwords_eng.txt", header=None, names=["w"])
+stopwords_ua = pd.read_csv(
+    script_dir / "stopwords/stopwords_ua.txt", header=None, names=["w"]
+)
+stopwords_eng = pd.read_csv(
+    script_dir / "stopwords/stopwords_eng.txt", header=None, names=["w"]
+)
 stop_words = set(stopwords_ua["w"].tolist() + stopwords_eng["w"].tolist())
 
 

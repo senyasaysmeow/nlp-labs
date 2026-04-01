@@ -23,24 +23,29 @@ import seaborn as sns
 
 warnings.filterwarnings("ignore")
 
-# stopwords
-stopwords_ua = pd.read_csv("stopwords/stopwords_ua.txt", header=None, names=["w"])
-stopwords_eng = pd.read_csv("stopwords/stopwords_eng.txt", header=None, names=["w"])
+# Get the script directory for relative paths
+script_dir = Path(__file__).parent
+data_path = script_dir / "articles" / "ukr_pravda_news.json"
+
+
+stopwords_ua = pd.read_csv(
+    script_dir / "stopwords/stopwords_ua.txt", header=None, names=["w"]
+)
+stopwords_eng = pd.read_csv(
+    script_dir / "stopwords/stopwords_eng.txt", header=None, names=["w"]
+)
 stop_words = set(stopwords_ua["w"].tolist() + stopwords_eng["w"].tolist())
 
-# Category mapping to unified spheres
-# Note: 'other' merged with 'social' due to small sample size (1 item)
 CATEGORY_MAPPING = {
-    "politics": "political",  # political
-    "economics": "economic",  # economic
-    "life": "social",  # social
-    "sport": "social",  # social
-    "technologies": "technologies",  # tech/defence
-    "defence": "technologies",  # tech/defence
+    "politics": "political",
+    "economics": "economic",
+    "life": "social",
+    "sport": "social",
+    "technologies": "technologies",
+    "defence": "technologies",
     "other": "social",  # merged with social due to small sample
 }
 
-# Ukrainian category names for display
 CATEGORY_NAMES_UA = {
     "political": "Політична",
     "economic": "Економічна",
@@ -83,7 +88,6 @@ def prepare_data(news_data: List[Dict]) -> Tuple[List[str], List[str], List[str]
     mapped_categories = []
 
     for article in news_data:
-        # Combine title and content for better classification
         title = article.get("title", "")
         content = article.get("content", "")
         full_text = f"{title} {content}"
@@ -339,13 +343,11 @@ def demonstrate_predictions(
         text = sample_texts[idx]
         true_category = sample_categories[idx]
 
-        # Vectorize and predict
         text_vector = vectorizer.transform([text])
         predicted_category = label_encoder.inverse_transform(
             model.predict(text_vector)
         )[0]
 
-        # Show first 150 characters
         display_text = text[:150] + "..." if len(text) > 150 else text
 
         print(f"\nText: {display_text}")
@@ -357,10 +359,6 @@ def demonstrate_predictions(
 
 
 def main():
-    # Get the script directory for relative paths
-    script_dir = Path(__file__).parent
-    data_path = script_dir / "article" / "ukr_pravda_news.json"
-
     print("\n" + "=" * 70)
     print("NEWS CLASSIFICATION USING SUPERVISED LEARNING")
     print("Класифікація новин за сферами (економічна, політична, соціальна та інші)")

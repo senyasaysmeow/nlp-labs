@@ -3,6 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from datetime import datetime, timedelta
+import os
+from pathlib import Path
+
+script_dir = Path(__file__).parent
+dir_path = script_dir / "analysis/"
+os.makedirs(dir_path, exist_ok=True)
 
 
 def MNK(S0, poly_order=2):
@@ -82,7 +88,7 @@ COLORS = ["#e63946", "#2a9d8f", "#f4a261"]
 MARKERS = ["o", "s", "^"]
 
 
-df = pd.read_csv("analysis/top3_timeseries.csv", encoding="utf-8-sig")
+df = pd.read_csv(f"{dir_path}top3_timeseries.csv", encoding="utf-8-sig")
 dates_str = df["Дата"].tolist()
 terms = [c for c in df.columns if c != "Дата"]
 
@@ -177,8 +183,8 @@ for i, d in enumerate(all_dates):
     rows.append(row)
 
 df_out = pd.DataFrame(rows)
-df_out.to_csv("analysis/forecast_timeseries.csv", index=False, encoding="utf-8-sig")
-print("  Збережено: analysis/forecast_timeseries.csv")
+df_out.to_csv(f"{dir_path}forecast_timeseries.csv", index=False, encoding="utf-8-sig")
+print(f"  Збережено: {dir_path}forecast_timeseries.csv")
 print(df_out.to_string(index=False))
 
 
@@ -216,8 +222,8 @@ for ax, r, color in zip(axes, results, COLORS):
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
 plt.tight_layout()
-plt.savefig("analysis/01_trends.png", dpi=150, bbox_inches="tight")
-print("\n  Збережено: analysis/01_trends.png")
+plt.savefig(f"{dir_path}01_trends.png", dpi=150, bbox_inches="tight")
+print(f"\n  Збережено: {dir_path}01_trends.png")
 
 
 # ── Граф 2: екстраполяція (прогноз) ──────────────────────────────────────────
@@ -282,8 +288,8 @@ for ax, r, color in zip(axes, results, COLORS):
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
 plt.tight_layout()
-plt.savefig("analysis/02_forecast.png", dpi=150, bbox_inches="tight")
-print("  Збережено: analysis/02_forecast.png")
+plt.savefig(f"{dir_path}02_forecast.png", dpi=150, bbox_inches="tight")
+print(f"  Збережено: {dir_path}02_forecast.png")
 
 
 print(f"\n{'═' * 70}")
