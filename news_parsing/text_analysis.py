@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from nltk.collocations import BigramCollocationFinder, BigramAssocMeasures
 
 script_dir = Path(__file__).parent
 dir_path = script_dir / "text_analysis/"
@@ -120,7 +121,7 @@ def analyze_tfidf(documents):
 
     # Збереження результатів
     tfidf_df = pd.DataFrame(top_words, columns=["Слово", "TF-IDF"])
-    tfidf_df.to_csv(f"{dir_path}tfidf_scores.csv", index=False, encoding="utf-8-sig")
+    tfidf_df.to_csv(f"{dir_path}/tfidf_scores.csv", index=False, encoding="utf-8-sig")
 
     # Візуалізація
     _, ax = plt.subplots(figsize=(12, 8))
@@ -136,10 +137,10 @@ def analyze_tfidf(documents):
     ax.grid(axis="x", alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(f"{dir_path}tfidf_chart.png", dpi=150)
+    plt.savefig(f"{dir_path}/tfidf_chart.png", dpi=150)
     plt.close()
 
-    print(f"\nГрафік збережено: {dir_path}tfidf_chart.png")
+    print(f"\nГрафік збережено: {dir_path}/tfidf_chart.png")
 
     return corpus_tfidf
 
@@ -230,14 +231,16 @@ def compute_lexical_dispersion(documents, target_words):
     ax.grid(axis="x", alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(f"{dir_path}lexical_dispersion.png", dpi=150)
+    plt.savefig(f"{dir_path}/lexical_dispersion.png", dpi=150)
     plt.close()
 
     # Збереження статистики
     disp_df = pd.DataFrame(dispersion_stats)
-    disp_df.to_csv(f"{dir_path}dispersion_stats.csv", index=False, encoding="utf-8-sig")
+    disp_df.to_csv(
+        f"{dir_path}/dispersion_stats.csv", index=False, encoding="utf-8-sig"
+    )
 
-    print(f"\nГрафік дисперсії збережено: {dir_path}lexical_dispersion.png")
+    print(f"\nГрафік дисперсії збережено: {dir_path}/lexical_dispersion.png")
 
     return dispersion_stats, word_positions
 
@@ -315,16 +318,16 @@ def analyze_word_length_distribution(documents):
     ax3.set_ylim(0, 1.05)
 
     plt.tight_layout()
-    plt.savefig(f"{dir_path}word_length_distribution.png", dpi=150)
+    plt.savefig(f"{dir_path}/word_length_distribution.png", dpi=150)
     plt.close()
 
     # Збереження даних
     dist_df = pd.DataFrame(distribution_data)
     dist_df.to_csv(
-        f"{dir_path}word_length_distribution.csv", index=False, encoding="utf-8-sig"
+        f"{dir_path}/word_length_distribution.csv", index=False, encoding="utf-8-sig"
     )
 
-    print(f"\nГрафіки збережено: {dir_path}word_length_distribution.png")
+    print(f"\nГрафіки збережено: {dir_path}/word_length_distribution.png")
 
     return distribution_data
 
@@ -334,72 +337,38 @@ def analyze_word_length_distribution(documents):
 # =============================================================================
 
 
-def extract_bigrams(words):
-    return [(words[i], words[i + 1]) for i in range(len(words) - 1)]
-
-
-def compute_bigram_probability(bigrams, word_freq):
-    """
-    Обчислення ймовірності біграм P(w2|w1) = P(w1,w2) / P(w1)
-    """
-    bigram_freq = Counter(bigrams)
-
-    bigram_probs = {}
-    for bigram, count in bigram_freq.items():
-        w1, w2 = bigram
-        # Умовна ймовірність P(w2|w1)
-        prob = count / word_freq[w1] if word_freq[w1] > 0 else 0
-        bigram_probs[bigram] = {
-            "count": count,
-            "conditional_prob": prob,
-            "w1_freq": word_freq[w1],
-            "w2_freq": word_freq[w2],
-        }
-
-    return bigram_probs
-
-
 def analyze_bigrams(documents):
     print("\n" + "=" * 60)
     print("БІГРАМНИЙ АНАЛІЗ")
     print("=" * 60)
 
-    # Збираємо всі слова та біграми
-    all_words = []
-    all_bigrams = []
+    # Збираємо всі слова
+    all_words = [word for doc in documents for word in doc["words"]]
 
-    for doc in documents:
-        all_words.extend(doc["words"])
-        all_bigrams.extend(extract_bigrams(doc["words"]))
+    # Створюємо BigramCollocationFinder
+    finder = BigramCollocationFinder.from_words(all_words)
+    finder.apply_freq_filter(3)  # Фільтруємо рідкісні біграми
 
+    bigram_measures = BigramAssocMeasures()
     word_freq = Counter(all_words)
-    bigram_freq = Counter(all_bigrams)
-
     total_words = len(all_words)
-    total_bigrams = len(all_bigrams)
+    total_bigrams = total_words - 1
 
     print(f"\nЗагальна кількість слів: {total_words}")
     print(f"Загальна кількість біграм: {total_bigrams}")
-    print(f"Унікальних біграм: {len(bigram_freq)}")
+    print(f"Унікальних біграм (freq>=3): {len(list(finder.ngram_fd.items()))}")
 
     # Топ-30 найчастіших біграм
-    top_bigrams = bigram_freq.most_common(30)
+    top_bigrams = finder.ngram_fd.most_common(30)
 
     print("\nТоп-30 найчастіших біграм:")
     print("-" * 60)
 
     bigram_data = []
-    for i, (bigram, count) in enumerate(top_bigrams, 1):
-        w1, w2 = bigram
-        # Ймовірність біграми P(w1, w2)
+    for i, ((w1, w2), count) in enumerate(top_bigrams, 1):
         joint_prob = count / total_bigrams
-        # Умовна ймовірність P(w2|w1)
         cond_prob = count / word_freq[w1]
-        # Ймовірність слів окремо
-        p_w1 = word_freq[w1] / total_words
-        p_w2 = word_freq[w2] / total_words
-        # Pointwise Mutual Information
-        pmi = math.log2(joint_prob / (p_w1 * p_w2)) if p_w1 > 0 and p_w2 > 0 else 0
+        pmi = finder.score_ngram(bigram_measures.pmi, w1, w2)
 
         bigram_data.append(
             {
@@ -416,22 +385,18 @@ def analyze_bigrams(documents):
             f"P(w2|w1)={cond_prob:.3f} | PMI={pmi:.2f}"
         )
 
-    # Топ-20 за PMI (сильні колокації)
-    all_bigram_stats = []
-    for bigram, count in bigram_freq.items():
-        if count >= 3:  # Фільтруємо рідкісні біграми
-            w1, w2 = bigram
-            joint_prob = count / total_bigrams
-            p_w1 = word_freq[w1] / total_words
-            p_w2 = word_freq[w2] / total_words
-            pmi = math.log2(joint_prob / (p_w1 * p_w2)) if p_w1 > 0 and p_w2 > 0 else 0
-            all_bigram_stats.append(
-                {"bigram": f"{w1} {w2}", "count": count, "pmi": pmi}
-            )
+    # Топ-25 за PMI
+    top_pmi_raw = finder.nbest(bigram_measures.pmi, 25)
+    top_pmi = [
+        {
+            "bigram": f"{w1} {w2}",
+            "count": finder.ngram_fd[(w1, w2)],
+            "pmi": finder.score_ngram(bigram_measures.pmi, w1, w2),
+        }
+        for w1, w2 in top_pmi_raw
+    ]
 
-    top_pmi = sorted(all_bigram_stats, key=lambda x: x["pmi"], reverse=True)[:20]
-
-    print("\nТоп-20 біграм за PMI (сильні колокації):")
+    print("\nТоп-25 біграм за PMI:")
     print("-" * 50)
     for i, item in enumerate(top_pmi, 1):
         print(
@@ -466,23 +431,23 @@ def analyze_bigrams(documents):
     ax2.set_yticklabels(pmi_labels, fontsize=9)
     ax2.invert_yaxis()
     ax2.set_xlabel("PMI (Pointwise Mutual Information)")
-    ax2.set_title("Топ-15 біграм за PMI (колокації)")
+    ax2.set_title("Топ-15 біграм за PMI")
     ax2.grid(axis="x", alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(f"{dir_path}bigram_analysis.png", dpi=150)
+    plt.savefig(f"{dir_path}/bigram_analysis.png", dpi=150)
     plt.close()
 
     # Збереження даних
     bigram_df = pd.DataFrame(bigram_data)
     bigram_df.to_csv(
-        f"{dir_path}bigram_frequency.csv", index=False, encoding="utf-8-sig"
+        f"{dir_path}/bigram_frequency.csv", index=False, encoding="utf-8-sig"
     )
 
     pmi_df = pd.DataFrame(top_pmi)
-    pmi_df.to_csv(f"{dir_path}bigram_pmi.csv", index=False, encoding="utf-8-sig")
+    pmi_df.to_csv(f"{dir_path}/bigram_pmi.csv", index=False, encoding="utf-8-sig")
 
-    print(f"\nГрафіки збережено: {dir_path}bigram_analysis.png")
+    print(f"\nГрафіки збережено: {dir_path}/bigram_analysis.png")
 
     return bigram_data, top_pmi
 
@@ -530,7 +495,7 @@ def main():
     print("\n" + "=" * 60)
     print("АНАЛІЗ ЗАВЕРШЕНО")
     print("=" * 60)
-    print(f"\nРезультати збережено в папці: {dir_path}")
+    print(f"\nРезультати збережено в папці: {dir_path}/")
     print("Файли:")
     print("  - tfidf_scores.csv - TF-IDF оцінки")
     print("  - tfidf_chart.png - Візуалізація TF-IDF")
