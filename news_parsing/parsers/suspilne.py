@@ -112,6 +112,6 @@ if __name__ == "__main__":
         print(f"{preview}{'...' if len(item['content']) > 300 else ''}")
         print("\n")
 
-    with open(f"{dir_path}suspilne_news.json", "w", encoding="utf-8") as f:
+    with open(f"{dir_path}/suspilne_news.json", "w", encoding="utf-8") as f:
         json.dump(news, f, ensure_ascii=False, indent=4)
-    print(f"Successfully saved to {dir_path}suspilne_news.json")
+    print(f"Successfully saved to {dir_path}/suspilne_news.json")

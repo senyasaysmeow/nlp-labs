@@ -131,8 +131,8 @@ def plot_timeseries(df, top3):
     ax.grid(True, linestyle="--", alpha=0.5)
 
     fig.tight_layout()
-    fig.savefig(f"{dir_path}top3_linechart.png", dpi=150)
-    print(f"Графік збережено у {dir_path}top3_linechart.png")
+    fig.savefig(f"{dir_path}/top3_linechart.png", dpi=150)
+    print(f"Графік збережено у {dir_path}/top3_linechart.png")
 
 
 def main():
@@ -207,8 +207,8 @@ def main():
             plot_data.append({"datetime": f"{day_str} {period}", "sum_freq": sum_freq})
 
     table = pd.DataFrame(table_rows)
-    table.to_csv(f"{dir_path}table.csv", index=False, encoding="utf-8-sig")
-    print(f"Таблиця збережена у {dir_path}table.csv")
+    table.to_csv(f"{dir_path}/table.csv", index=False, encoding="utf-8-sig")
+    print(f"Таблиця збережена у {dir_path}/table.csv")
 
     wordcloud = WordCloud(
         width=800, height=400, background_color="white", colormap="viridis"
@@ -218,16 +218,16 @@ def main():
     plt.axis("off")
     plt.title("Хмара слів (Топ 5 термінів)")
     plt.tight_layout()
-    plt.savefig(f"{dir_path}wordcloud.png")
-    print(f"Хмара слів збережена у {dir_path}wordcloud.png")
+    plt.savefig(f"{dir_path}/wordcloud.png")
+    print(f"Хмара слів збережена у {dir_path}/wordcloud.png")
 
-    top3 = find_top3_from_table(f"{dir_path}table.csv")
+    top3 = find_top3_from_table(f"{dir_path}/table.csv")
     articles = load_data()
     top3_timeseries = build_daily_timeseries(articles, top3)
     top3_timeseries.to_csv(
-        f"{dir_path}top3_timeseries.csv", index=False, encoding="utf-8-sig"
+        f"{dir_path}/top3_timeseries.csv", index=False, encoding="utf-8-sig"
     )
-    print(f"\nЧасові ряди збережено у {dir_path}top3_timeseries.csv")
+    print(f"\nЧасові ряди збережено у {dir_path}/top3_timeseries.csv")
     print(top3_timeseries.to_string(index=False))
     plot_timeseries(top3_timeseries, top3)
 
