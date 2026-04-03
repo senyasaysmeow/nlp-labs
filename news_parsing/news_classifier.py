@@ -23,10 +23,8 @@ import seaborn as sns
 
 warnings.filterwarnings("ignore")
 
-# Get the script directory for relative paths
 script_dir = Path(__file__).parent
 data_path = script_dir / "articles" / "ukr_pravda_news.json"
-
 
 stopwords_ua = pd.read_csv(
     script_dir / "stopwords/stopwords_ua.txt", header=None, names=["w"]
@@ -136,7 +134,7 @@ def train_and_evaluate_classifiers(X_train, X_test, y_train, y_test) -> Dict:
     best_name = ""
 
     print("\n" + "=" * 70)
-    print("TRAINING AND EVALUATION RESULTS")
+    print("РЕЗУЛЬТАТИ НАВЧАННЯ ТА ОЦІНКИ")
     print("=" * 70)
 
     for name, clf in classifiers.items():
@@ -161,9 +159,9 @@ def train_and_evaluate_classifiers(X_train, X_test, y_train, y_test) -> Dict:
             "y_pred": y_pred,
         }
 
-        print(f"Accuracy: {accuracy:.4f} ({accuracy * 100:.2f}%)")
-        print(f"F1-score (macro): {f1_macro:.4f}")
-        print(f"F1-score (weighted): {f1_weighted:.4f}")
+        print(f"Точність: {accuracy:.4f} ({accuracy * 100:.2f}%)")
+        print(f"F1-міра (macro): {f1_macro:.4f}")
+        print(f"F1-міра (weighted): {f1_weighted:.4f}")
 
         # Track best model
         if accuracy > best_accuracy:
@@ -172,16 +170,16 @@ def train_and_evaluate_classifiers(X_train, X_test, y_train, y_test) -> Dict:
             best_name = name
 
     print("\n" + "=" * 70)
-    print(f"BEST MODEL: {best_name}")
-    print(f"Best Accuracy: {best_accuracy:.4f} ({best_accuracy * 100:.2f}%)")
+    print(f"НАЙКРАЩА МОДЕЛЬ: {best_name}")
+    print(f"Найкраща точність: {best_accuracy:.4f} ({best_accuracy * 100:.2f}%)")
     print("=" * 70)
 
-    # Check if target accuracy (>60%) is achieved
+    # Перевірка чи досягнуто цільову точність (>60%)
     if best_accuracy >= 0.6:
-        print("\n[SUCCESS] Target accuracy (>60%) achieved!")
+        print("\n[УСПІХ] Цільову точність (>60%) досягнуто!")
     else:
         print(
-            f"\n[WARNING] Target accuracy (>60%) not achieved. Current: {best_accuracy * 100:.2f}%"
+            f"\n[УВАГА] Цільову точність (>60%) не досягнуто. Поточна: {best_accuracy * 100:.2f}%"
         )
 
     results["best"] = {
@@ -212,15 +210,17 @@ def cross_validate_best_model(X, y, best_clf_name: str) -> float:
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     cv_scores = cross_val_score(clf, X, y, cv=cv, scoring="accuracy")
 
-    print(f"\nCross-validation scores (5-fold): {cv_scores}")
-    print(f"Mean CV Accuracy: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})")
+    print(f"\nОцінки крос-валідації (5-fold): {cv_scores}")
+    print(
+        f"Середня точність CV: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})"
+    )
 
     return cv_scores.mean()
 
 
 def print_detailed_report(y_test, y_pred, label_encoder: LabelEncoder):
     print("\n" + "=" * 70)
-    print("DETAILED CLASSIFICATION REPORT")
+    print("ДЕТАЛЬНИЙ ЗВІТ КЛАСИФІКАЦІЇ")
     print("=" * 70)
 
     class_names = label_encoder.classes_
@@ -249,14 +249,14 @@ def plot_confusion_matrix(
         xticklabels=class_names_ua,
         yticklabels=class_names_ua,
     )
-    plt.title("Confusion Matrix / Матриця помилок")
-    plt.xlabel("Predicted / Передбачено")
-    plt.ylabel("True / Справжнє")
+    plt.title("Матриця помилок")
+    plt.xlabel("Передбачено")
+    plt.ylabel("Справжнє")
     plt.tight_layout()
 
     if save_path:
         plt.savefig(save_path, dpi=150)
-        print(f"\nConfusion matrix saved to: {save_path}")
+        print(f"\nМатрицю помилок збережено у: {save_path}")
 
     plt.close()
 
@@ -303,12 +303,12 @@ def plot_model_comparison(results: Dict, save_path: str = None):
             fontsize=9,
         )
 
-    # Add 60% threshold line
-    ax.axhline(y=0.6, color="red", linestyle="--", linewidth=2, label="Target (60%)")
+    # Додаємо лінію порогу 60%
+    ax.axhline(y=0.6, color="red", linestyle="--", linewidth=2, label="Ціль (60%)")
 
-    ax.set_xlabel("Model")
-    ax.set_ylabel("Score")
-    ax.set_title("Model Comparison / Порівняння моделей")
+    ax.set_xlabel("Модель")
+    ax.set_ylabel("Оцінка")
+    ax.set_title("Порівняння моделей")
     ax.set_xticks(x)
     ax.set_xticklabels(model_names)
     ax.set_ylim(0, 1.0)
@@ -318,99 +318,66 @@ def plot_model_comparison(results: Dict, save_path: str = None):
 
     if save_path:
         plt.savefig(save_path, dpi=150)
-        print(f"Model comparison plot saved to: {save_path}")
+        print(f"Графік порівняння моделей збережено у: {save_path}")
 
     plt.close()
 
 
-def demonstrate_predictions(
-    model,
-    vectorizer,
-    label_encoder,
-    sample_texts: List[str],
-    sample_categories: List[str],
-    n_samples: int = 5,
-):
-    print("\n" + "=" * 70)
-    print("SAMPLE PREDICTIONS")
-    print("=" * 70)
-
-    indices = np.random.choice(
-        len(sample_texts), min(n_samples, len(sample_texts)), replace=False
-    )
-
-    for idx in indices:
-        text = sample_texts[idx]
-        true_category = sample_categories[idx]
-
-        text_vector = vectorizer.transform([text])
-        predicted_category = label_encoder.inverse_transform(
-            model.predict(text_vector)
-        )[0]
-
-        display_text = text[:150] + "..." if len(text) > 150 else text
-
-        print(f"\nText: {display_text}")
-        print(f"True: {CATEGORY_NAMES_UA.get(true_category, true_category)}")
-        print(
-            f"Predicted: {CATEGORY_NAMES_UA.get(predicted_category, predicted_category)}"
-        )
-        print(f"Match: {'YES' if true_category == predicted_category else 'NO'}")
-
-
 def main():
     print("\n" + "=" * 70)
-    print("NEWS CLASSIFICATION USING SUPERVISED LEARNING")
-    print("Класифікація новин за сферами (економічна, політична, соціальна та інші)")
+    print("КЛАСИФІКАЦІЯ НОВИН З ВИКОРИСТАННЯМ НАВЧАННЯ З УЧИТЕЛЕМ")
+    print(
+        "Класифікація новин за сферами (економічна, політична, соціальна та технології)"
+    )
     print("=" * 70)
 
-    # 1. Load data
-    print(f"\n[1] Loading data from: {data_path}")
+    # 1. Завантаження даних
+    print(f"\nЗавантаження даних з: {data_path}")
     news_data = load_news_data(data_path)
-    print(f"    Total news articles: {len(news_data)}")
+    print(f"    Всього новинних статей: {len(news_data)}")
 
-    # 2. Prepare data
-    print("\n[2] Preparing and preprocessing data...")
+    # 2. Підготовка даних
+    print("\nПідготовка та попередня обробка даних...")
     texts, original_categories, mapped_categories = prepare_data(news_data)
-    print(f"    Processed articles: {len(texts)}")
+    print(f"    Оброблено статей: {len(texts)}")
 
-    # Print category distribution
+    # Вивід розподілу категорій
     from collections import Counter
 
-    print("\n    Original category distribution:")
+    print("\n    Розподіл оригінальних категорій:")
     for cat, count in sorted(Counter(original_categories).items()):
         print(f"      {cat}: {count}")
 
-    print("\n    Mapped category distribution:")
+    print("\n    Розподіл згрупованих категорій:")
     for cat, count in sorted(Counter(mapped_categories).items()):
         print(f"      {CATEGORY_NAMES_UA.get(cat, cat)}: {count}")
 
-    # 3. Create TF-IDF features
-    print("\n[3] Creating TF-IDF features...")
+    # 3. Створення TF-IDF ознак
+    print("\nСтворення TF-IDF ознак...")
     X, vectorizer = create_tfidf_features(texts)
-    print(f"    Feature matrix shape: {X.shape}")
-    print(f"    Features (words/n-grams): {X.shape[1]}")
+    print(f"    Розмір матриці ознак: {X.shape}")
+    print(f"    Кількість ознак (слова/n-грами): {X.shape[1]}")
 
-    # 4. Encode labels
+    # 4. Кодування міток
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(mapped_categories)
-    print("\n[4] Label encoding completed")
-    print(f"    Classes: {list(label_encoder.classes_)}")
+    print("\nКодування міток завершено")
+    print(f"    Класи: {list(label_encoder.classes_)}")
 
-    # 5. Split data
-    print("\n[5] Splitting data (80% train, 20% test)...")
+    # 5. Розділення даних
+    print("\nРозділення даних (80% навчання, 20% тест)...")
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
-    print(f"    Training samples: {X_train.shape[0]}")
-    print(f"    Test samples: {X_test.shape[0]}")
+    print(f"    Навчальних зразків: {X_train.shape[0]}")
+    print(f"    Тестових зразків: {X_test.shape[0]}")
 
-    # 6. Train and evaluate classifiers
-    print("\n[6] Training classifiers...")
+    # 6. Навчання та оцінка класифікаторів
+    print("\nНавчання класифікаторів...")
     results = train_and_evaluate_classifiers(X_train, X_test, y_train, y_test)
 
-    # 7. Cross-validation for best model
-    print("\n[7] Cross-validation for best model...")
+    # 7. Крос-валідація для найкращої моделі
+    print("\nКрос-валідація для найкращої моделі...")
     best_name = results["best"]["name"]
     cv_accuracy = cross_validate_best_model(X, y, best_name)
 
@@ -418,13 +385,13 @@ def main():
     best_y_pred = results[best_name]["y_pred"]
     print_detailed_report(y_test, best_y_pred, label_encoder)
 
-    # 9. Plot confusion matrix
-    print("\n[8] Generating visualizations...")
+    # 9. Побудова матриці помилок
+    print("\nГенерація візуалізацій...")
     plot_confusion_matrix(
         y_test, best_y_pred, label_encoder, script_dir / "confusion_matrix.png"
     )
 
-    # Plot model comparison
+    # Побудова порівняння моделей
     plot_model_comparison(results, script_dir / "model_comparison.png")
 
     # 10. Demonstrate predictions
@@ -432,30 +399,6 @@ def main():
     test_idx = [i for i in range(len(texts))][-X_test.shape[0] :]
     sample_texts_subset = [texts[i] for i in test_idx[:10]]
     sample_categories_subset = [mapped_categories[i] for i in test_idx[:10]]
-
-    demonstrate_predictions(
-        best_model,
-        vectorizer,
-        label_encoder,
-        sample_texts_subset,
-        sample_categories_subset,
-        n_samples=5,
-    )
-
-    # Final summary
-    print("\n" + "=" * 70)
-    print("SUMMARY / ПІДСУМОК")
-    print("=" * 70)
-    print(f"Best Model: {best_name}")
-    print(f"Accuracy: {results['best']['accuracy'] * 100:.2f}%")
-    print(f"Cross-validation Accuracy: {cv_accuracy * 100:.2f}%")
-    print(
-        f"Target (>60%): {'ACHIEVED' if results['best']['accuracy'] >= 0.6 else 'NOT ACHIEVED'}"
-    )
-    print("\nGenerated files:")
-    print("  - confusion_matrix.png")
-    print("  - model_comparison.png")
-    print("=" * 70)
 
     return results
 
