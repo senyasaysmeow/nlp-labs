@@ -1,0 +1,8 @@
+pandas
+matplotlib
+wordcloud
+scikit-learn
+seaborn
+nltk
+cloudscraper
+beautifulsoup4
