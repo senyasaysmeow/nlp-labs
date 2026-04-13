@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import cloudscraper
 from bs4 import BeautifulSoup
@@ -29,21 +30,30 @@ def fetch_article_text(url, scraper):
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        content_div = soup.find(
-            "div",
-            class_=lambda x: bool(x and isinstance(x, str) and "article-content" in x),
-        )
+        info_div = soup.select_one(".info > div:first-child")
+        if info_div:
+            text = info_div.get_text(strip=True)
+
+            time_text, date_text, *_ = text.split()  # "17:56", "13.04.2026", "Пн"
+            date = datetime.strptime(date_text, "%d.%m.%Y")
+
+            pub_time = f"{date.strftime('%Y-%m-%d')}T{time_text}+02:00"
+
+        content_div = soup.find("div", class_="txt")
 
         if content_div:
             paragraphs = content_div.find_all("p")
-            return "\n\n".join([p.text.strip() for p in paragraphs if p.text.strip()])
+            return (
+                "\n\n".join([p.text.strip() for p in paragraphs if p.text.strip()]),
+                pub_time,
+            )
 
         return "[Content structure not found]"
     except Exception as e:
         return f"[Error fetching article: {str(e)}]"
 
 
-def parse_suspilne_latest(url: str, scraper):
+def parse_rbc_latest(url: str, scraper):
     print(f"Fetching page {url}")
     time.sleep(random.uniform(1, 2))  # Random delay
     response = scraper.get(url)
@@ -58,31 +68,23 @@ def parse_suspilne_latest(url: str, scraper):
         print(f"Failed to fetch page. Status code: {response.status_code}")
         return []
     soup = BeautifulSoup(response.text, "html.parser")
-    articles = soup.find_all("article")
+    content_div = soup.find("div", class_="newsline")
+    if content_div:
+        articles = content_div.find_all("div")
+    else:
+        return "[Content structure not found]"
 
     news_items = []
 
     for article in articles:
-        link_tag = article.find(
-            "a", class_=lambda x: bool(x and isinstance(x, str) and "headline" in x)
-        )
+        link_tag = article.find("a")
         if not link_tag:
             continue
-
-        title_span = link_tag.find(
-            "span", class_=lambda x: bool(x and isinstance(x, str) and "label" not in x)
-        )
-        if not title_span:
-            continue
-        title = title_span.text.strip()
+        link_tag.span.decompose()
+        title = link_tag.get_text(strip=True)
         link = link_tag.get("href")
 
-        time_tag = article.find("time")
-        if not time_tag:
-            continue
-        pub_time = time_tag.get("datetime")
-
-        content = fetch_article_text(link, scraper)
+        content, pub_time = fetch_article_text(link, scraper)
 
         news_items.append(
             {"title": title, "link": link, "time": pub_time, "content": content}
@@ -98,9 +100,9 @@ if __name__ == "__main__":
     )
 
     news = []
-    for i in range(1, 5):
-        url = f"https://suspilne.media/latest/?page={i}"
-        latest_news = parse_suspilne_latest(url, scraper)
+    for i in range(1, 3):
+        url = f"https://www.rbc.ua/rus/allnews/{i}"
+        latest_news = parse_rbc_latest(url, scraper)
         news.extend(latest_news)
     print(f"Total articles found: {len(news)}\n")
     print("Examples:\n")
@@ -113,6 +115,6 @@ if __name__ == "__main__":
         print(f"{preview}{'...' if len(item['content']) > 300 else ''}")
         print("\n")
 
-    with open(f"{dir_path}/suspilne_news.json", "w", encoding="utf-8") as f:
+    with open(f"{dir_path}/rbc_news.json", "w", encoding="utf-8") as f:
         json.dump(news, f, ensure_ascii=False, indent=4)
-    print(f"Successfully saved to {dir_path}/suspilne_news.json")
+    print(f"Successfully saved to {dir_path}/rbc_news.json")
