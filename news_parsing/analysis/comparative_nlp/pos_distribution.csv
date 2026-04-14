@@ -1,32 +1,31 @@
 ﻿source,pos,count
-Rbc,NOUN,13305
-Rbc,ADVB,781
-Rbc,VERB,3935
-Rbc,ADJF,3413
-Rbc,UNKN,324
-Rbc,GRND,75
-Rbc,NUMR,74
-Rbc,CONJ,39
-Rbc,NPRO,2
-Rbc,PRCL,4
-Suspilne,ADJF,1616
-Suspilne,NOUN,5279
-Suspilne,VERB,1415
-Suspilne,GRND,29
-Suspilne,ADVB,252
-Suspilne,UNKN,201
-Suspilne,CONJ,8
-Suspilne,NUMR,32
+Rbc,NOUN,14173
+Rbc,VERB,3993
+Rbc,ADJF,3752
+Rbc,UNKN,398
+Rbc,GRND,87
+Rbc,ADVB,794
+Rbc,NUMR,98
+Rbc,CONJ,18
+Rbc,PRCL,5
+Rbc,NPRO,3
+Suspilne,NOUN,11372
+Suspilne,VERB,3170
+Suspilne,ADVB,512
+Suspilne,ADJF,3462
+Suspilne,UNKN,514
+Suspilne,NUMR,65
+Suspilne,GRND,68
+Suspilne,CONJ,20
+Suspilne,PRCL,8
 Suspilne,NPRO,2
-Suspilne,PRCL,3
-Ukr Pravda,ADJF,3921
-Ukr Pravda,NOUN,13363
-Ukr Pravda,VERB,3949
-Ukr Pravda,ADVB,789
-Ukr Pravda,UNKN,570
-Ukr Pravda,NUMR,84
-Ukr Pravda,CONJ,30
-Ukr Pravda,GRND,78
-Ukr Pravda,NPRO,2
-Ukr Pravda,PREP,1
-Ukr Pravda,PRCL,2
+Ukr Pravda,UNKN,589
+Ukr Pravda,VERB,3714
+Ukr Pravda,ADJF,3842
+Ukr Pravda,NOUN,12937
+Ukr Pravda,NUMR,96
+Ukr Pravda,GRND,62
+Ukr Pravda,ADVB,749
+Ukr Pravda,CONJ,18
+Ukr Pravda,NPRO,1
+Ukr Pravda,PRCL,4

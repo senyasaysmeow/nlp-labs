@@ -98,7 +98,7 @@ if __name__ == "__main__":
     )
 
     news = []
-    for i in range(1, 5):
+    for i in range(1, 11):
         url = f"https://suspilne.media/latest/?page={i}"
         latest_news = parse_suspilne_latest(url, scraper)
         news.extend(latest_news)
