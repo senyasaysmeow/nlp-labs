@@ -200,6 +200,7 @@ def analyze(
     pos_rows: list[dict] = []
     lemma_rows: list[dict] = []
     stem_rows: list[dict] = []
+    article_sentiment_rows: list[dict] = []
 
     for path in json_files:
         source = build_source_name(path)
@@ -213,7 +214,7 @@ def analyze(
         pos_counter: Counter[str] = Counter()
         sentiment_scores: list[float] = []
 
-        for item in items:
+        for article_idx, item in enumerate(items, start=1):
             text = f"{item.get('title', '')} {item.get('content', '')}".strip()
             docs.append(text)
 
@@ -231,7 +232,31 @@ def analyze(
 
             pos_hits = sum(1 for l in lemmas if l in POSITIVE_LEMMAS)
             neg_hits = sum(1 for l in lemmas if l in NEGATIVE_LEMMAS)
-            sentiment_scores.append((pos_hits - neg_hits) / max(len(lemmas), 1))
+            sentiment_score = (pos_hits - neg_hits) / max(len(lemmas), 1)
+            sentiment_scores.append(sentiment_score)
+
+            if sentiment_score > 0:
+                sentiment_label = "positive"
+            elif sentiment_score < 0:
+                sentiment_label = "negative"
+            else:
+                sentiment_label = "neutral"
+
+            article_sentiment_rows.append(
+                {
+                    "source": source,
+                    "article_index": article_idx,
+                    "title": item.get("title", ""),
+                    "link": item.get("link", ""),
+                    "time": item.get("time", ""),
+                    "category": item.get("category", ""),
+                    "tokens_no_stop": len(lemmas),
+                    "positive_hits": pos_hits,
+                    "negative_hits": neg_hits,
+                    "sentiment_score": round(sentiment_score, 6),
+                    "sentiment_label": sentiment_label,
+                }
+            )
 
         unique_lemmas = len(lemma_counter)
         ttr = unique_lemmas / max(tokens_no_stop, 1)
@@ -327,6 +352,9 @@ def analyze(
     )
     pd.DataFrame(sim_rows).to_csv(
         output_dir / "source_similarity.csv", index=False, encoding="utf-8-sig"
+    )
+    pd.DataFrame(article_sentiment_rows).to_csv(
+        output_dir / "sentiment_per_article.csv", index=False, encoding="utf-8-sig"
     )
 
     sentiment_cols = [

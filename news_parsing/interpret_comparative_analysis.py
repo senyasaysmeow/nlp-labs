@@ -17,6 +17,7 @@ def load_required(input_dir: Path) -> dict[str, pd.DataFrame]:
         "tfidf": input_dir / "tfidf_keywords.csv",
         "lemmas": input_dir / "top_lemmas.csv",
         "pos": input_dir / "pos_distribution.csv",
+        "sentiment_per_article": input_dir / "sentiment_per_article.csv",
     }
 
     missing = [name for name, path in required.items() if not path.exists()]
@@ -29,6 +30,7 @@ def load_required(input_dir: Path) -> dict[str, pd.DataFrame]:
         "tfidf": pd.read_csv(required["tfidf"]),
         "lemmas": pd.read_csv(required["lemmas"]),
         "pos": pd.read_csv(required["pos"]),
+        "sentiment_per_article": pd.read_csv(required["sentiment_per_article"]),
     }
 
 
@@ -57,12 +59,24 @@ def pos_profile(pos_df: pd.DataFrame, source: str) -> tuple[float, float, float]
     return pct(noun, total), pct(verb, total), pct(adj, total)
 
 
+def article_sentiment_breakdown(
+    sentiment_df: pd.DataFrame, source: str
+) -> tuple[float, float, float]:
+    subset = sentiment_df[sentiment_df["source"] == source].copy()
+    total = float(len(subset))
+    pos_share = pct(float((subset["sentiment_label"] == "positive").sum()), total)
+    neu_share = pct(float((subset["sentiment_label"] == "neutral").sum()), total)
+    neg_share = pct(float((subset["sentiment_label"] == "negative").sum()), total)
+    return pos_share, neu_share, neg_share
+
+
 def build_report(data: dict[str, pd.DataFrame]) -> str:
     summary = data["summary"].copy()
     similarity = data["similarity"].copy()
     tfidf = data["tfidf"].copy()
     lemmas = data["lemmas"].copy()
     pos = data["pos"].copy()
+    sentiment_per_article = data["sentiment_per_article"].copy()
 
     summary_sorted_ttr = summary.sort_values("ttr_lemma", ascending=False)
     summary_sorted_vocab = summary.sort_values("unique_lemmas", ascending=False)
@@ -122,6 +136,39 @@ def build_report(data: dict[str, pd.DataFrame]) -> str:
             f"- {src}: pos_share={row['sent_pos_share']:.3f}, neg_share={row['sent_neg_share']:.3f}."
         )
 
+    lines.append(
+        "- Додатково доступний файл на рівні новин: sentiment_per_article.csv (оцінка та мітка для кожної новини)."
+    )
+
+    lines.append("")
+    lines.append("## 3.1) Тональність по кожній новині")
+    for src in summary["source"].tolist():
+        pos_p, neu_p, neg_p = article_sentiment_breakdown(sentiment_per_article, src)
+        lines.append(
+            f"- {src}: positive={pos_p:.1f}%, neutral={neu_p:.1f}%, negative={neg_p:.1f}%."
+        )
+
+    top_positive = sentiment_per_article.sort_values(
+        "sentiment_score", ascending=False
+    ).head(3)
+    top_negative = sentiment_per_article.sort_values(
+        "sentiment_score", ascending=True
+    ).head(3)
+
+    lines.append("- Найбільш позитивні матеріали (top-3 за score):")
+    for _, row in top_positive.iterrows():
+        title = str(row.get("title", "")).strip() or "[без заголовка]"
+        lines.append(
+            f"- {row['source']} | score={row['sentiment_score']:.4f} | {title}"
+        )
+
+    lines.append("- Найбільш негативні матеріали (top-3 за score):")
+    for _, row in top_negative.iterrows():
+        title = str(row.get("title", "")).strip() or "[без заголовка]"
+        lines.append(
+            f"- {row['source']} | score={row['sentiment_score']:.4f} | {title}"
+        )
+
     lines.append("")
     lines.append("## 4) Структура мови (POS)")
     for src in summary["source"].tolist():
@@ -161,7 +208,7 @@ def parse_args() -> argparse.Namespace:
         "--input-dir",
         type=Path,
         default=Path("analysis") / "comparative_nlp",
-        help="Directory with summary.csv, source_similarity.csv, tfidf_keywords.csv, top_lemmas.csv, pos_distribution.csv",
+        help="Directory with summary.csv, source_similarity.csv, tfidf_keywords.csv, top_lemmas.csv, pos_distribution.csv, sentiment_per_article.csv",
     )
     parser.add_argument(
         "--output",
