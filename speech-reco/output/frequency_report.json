@@ -1,0 +1,212 @@
+{
+  "stats": {
+    "total_words": 683,
+    "unique_words": 386,
+    "sentence_count": 78,
+    "avg_sentence_length_words": 8.756,
+    "lexical_diversity": 0.5652,
+    "char_count": 4117
+  },
+  "top_words": [
+    {
+      "word": "україна",
+      "count": 5
+    },
+    {
+      "word": "великдень",
+      "count": 5
+    },
+    {
+      "word": "українці",
+      "count": 4
+    },
+    {
+      "word": "дорогі",
+      "count": 3
+    },
+    {
+      "word": "силою",
+      "count": 3
+    },
+    {
+      "word": "життя",
+      "count": 3
+    },
+    {
+      "word": "віра",
+      "count": 3
+    },
+    {
+      "word": "світло",
+      "count": 3
+    },
+    {
+      "word": "разом",
+      "count": 3
+    },
+    {
+      "word": "робимо",
+      "count": 3
+    },
+    {
+      "word": "зло",
+      "count": 3
+    },
+    {
+      "word": "землі",
+      "count": 3
+    },
+    {
+      "word": "людей",
+      "count": 3
+    },
+    {
+      "word": "сили",
+      "count": 3
+    },
+    {
+      "word": "вірити",
+      "count": 3
+    },
+    {
+      "word": "українки",
+      "count": 2
+    },
+    {
+      "word": "бог",
+      "count": 2
+    },
+    {
+      "word": "міста",
+      "count": 2
+    },
+    {
+      "word": "слова",
+      "count": 2
+    },
+    {
+      "word": "тисячі",
+      "count": 2
+    },
+    {
+      "word": "днів",
+      "count": 2
+    },
+    {
+      "word": "війна",
+      "count": 2
+    },
+    {
+      "word": "духу",
+      "count": 2
+    },
+    {
+      "word": "правди",
+      "count": 2
+    },
+    {
+      "word": "віри",
+      "count": 2
+    },
+    {
+      "word": "часи",
+      "count": 2
+    },
+    {
+      "word": "людях",
+      "count": 2
+    },
+    {
+      "word": "родина",
+      "count": 2
+    },
+    {
+      "word": "україни",
+      "count": 2
+    },
+    {
+      "word": "програла",
+      "count": 2
+    },
+    {
+      "word": "землю",
+      "count": 2
+    },
+    {
+      "word": "тепло",
+      "count": 2
+    },
+    {
+      "word": "сміх",
+      "count": 2
+    },
+    {
+      "word": "україну",
+      "count": 2
+    },
+    {
+      "word": "великодній",
+      "count": 2
+    },
+    {
+      "word": "стоїть",
+      "count": 2
+    },
+    {
+      "word": "батьків",
+      "count": 2
+    },
+    {
+      "word": "перемогу",
+      "count": 2
+    },
+    {
+      "word": "роки",
+      "count": 2
+    },
+    {
+      "word": "молилися",
+      "count": 2
+    },
+    {
+      "word": "неймовірних",
+      "count": 2
+    },
+    {
+      "word": "воскрес",
+      "count": 2
+    },
+    {
+      "word": "похитнеться",
+      "count": 1
+    },
+    {
+      "word": "закарбовані",
+      "count": 1
+    },
+    {
+      "word": "орантою",
+      "count": 1
+    },
+    {
+      "word": "великій",
+      "count": 1
+    },
+    {
+      "word": "софії",
+      "count": 1
+    },
+    {
+      "word": "наділені",
+      "count": 1
+    },
+    {
+      "word": "надзвичайною",
+      "count": 1
+    },
+    {
+      "word": "відчуваємо",
+      "count": 1
+    }
+  ]
+}

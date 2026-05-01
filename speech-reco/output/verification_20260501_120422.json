@@ -1,0 +1,10 @@
+{
+  "reference_path": "true_transcript.txt",
+  "reference_char_count": 4133,
+  "reference_word_count": 686,
+  "transcript_char_count": 4117,
+  "transcript_word_count": 683,
+  "exact_match": false,
+  "char_similarity": 0.7298,
+  "word_match_ratio": 0.9394
+}
